@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="card">
+<h2>Verified Active Directory security group</h2>
+<p><strong>Display name:</strong> {{ group.cn }}</p>
+<p><strong>sAMAccountName:</strong> {{ group.sam }}</p>
+<p><strong>SID:</strong> {{ group.sid }}</p>
+<p><strong>DN:</strong> {{ group.dn }}</p>
+<a href="/admin" class="button">Return to Administration</a>
+</section>
+{% endblock %}

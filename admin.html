@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% block page_header %}{% endblock %}
+{% block content %}
+<style>
+main:has(> .admin-layout){max-width:none}
+.admin-layout{display:grid;gap:16px}
+.admin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(460px,100%),1fr));gap:16px}
+.admin-form{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;margin:10px 0}
+.admin-form label{margin:0;flex:1 1 240px}.admin-form input:not([type=hidden]),.admin-form select{margin-top:4px}
+.admin-form button{margin:0}.admin-tight{font-size:12px}.admin-muted{color:#66758c}
+.admin-project{border-top:2px solid #dce4f0;margin-top:18px;padding-top:15px}
+.admin-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.admin-table{overflow-x:auto}.admin-table form{margin:0}.admin-table button{margin:0}
+.admin-warn{background:#fff7e8;border:1px solid #f0d5a0;border-radius:8px;padding:10px 13px}
+</style>
+<div class="admin-layout">
+  <section class="card">
+    <div class="admin-actions">
+      <a class="button secondary" style="margin:0" href="/">← Maintenance Portal</a>
+      <h1 style="margin:0">Administration · Project access</h1>
+    </div>
+    <p class="muted">Administrator: {{ user.name }}. AD groups must already exist. Group memberships and permissions are resolved live over LDAPS.</p>
+    <p class="admin-warn"><strong>Strict isolation:</strong> Admin sees all Windows hosts; general operators see only unassigned hosts; project members see only hosts assigned to their AD groups. One host belongs to one project. Project configuration changes are audited.</p>
+  </section>
+  <section class="card">
+    <h2>Create project</h2>
+    <form class="admin-form" method="post" action="/admin/projects/create">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <label>Project name<input type="text" name="name" required maxlength="100" placeholder="Project Alpha"></label>
+      <button type="submit">Create project</button>
+    </form>
+    <p class="muted admin-tight">After creation, attach at least one existing AD security group, then assign Windows hosts. You can add more groups at any time without changing application code.</p>
+  </section>
+  <section class="card">
+    <h2>General pool</h2>
+    <p><strong>{{ unassigned|length }}</strong> enabled Windows hosts currently have no project owner. They are visible to regular Operators and Viewers.</p>
+  </section>
+  <div class="admin-grid">
+  {% for p in projects %}
+    <section class="card">
+      <h2>{{ p.name }} <span class="muted admin-tight">#{{ p.id }}</span></h2>
+      <div class="admin-project"><strong>Assigned Active Directory groups</strong>
+        <p class="muted admin-tight">Use exact AD CN (e.g., Project Alpha Maintenance) or sAMAccountName. Nested membership works.</p>
+        <div class="admin-table"><table>
+          <thead><tr><th>Group</th><th>SID</th><th>Action</th></tr></thead>
+          <tbody>
+          {% for g in p.groups %}
+            <tr>
+              <td><strong>{{ g.cn }}</strong><div class="admin-muted admin-tight">{{ g.sam_name }}</div></td>
+              <td class="admin-tight">{{ g.group_sid }}</td>
+              <td><form method="post" action="/admin/projects/{{ p.id }}/groups/{{ g.id }}/remove">
+                <input type="hidden" name="csrf_token" value="{{ csrf }}">
+                <input type="hidden" name="confirmation" value="remove">
+                <button class="danger" type="submit" onclick="return confirm('Remove this AD group from the project?')">Remove</button>
+              </form></td>
+            </tr>
+          {% else %}<tr><td colspan="3">No AD groups assigned</td></tr>{% endfor %}
+          </tbody>
+        </table></div>
+        <form class="admin-form" method="post" action="/admin/projects/{{ p.id }}/groups/add">
+          <input type="hidden" name="csrf_token" value="{{ csrf }}">
+          <label>Existing AD security group<input type="text" name="group_name" required maxlength="120" placeholder="Project Alpha Maintenance"></label>
+          <button type="submit">Attach AD group</button>
+        </form>
+      </div>
+      <div class="admin-project"><strong>Project Windows hosts ({{ p.hosts|length }})</strong>
+        <div class="admin-table"><table>
+          <thead><tr><th>Host</th><th>Host ID</th><th>Action</th></tr></thead>
+          <tbody>
+          {% for h in p.hosts %}
+            <tr>
+              <td>{{ h.name }}</td>
+              <td>{{ h.host_id }}</td>
+              <td>
+                <form method="post" action="/admin/projects/{{ p.id }}/hosts/{{ h.host_id }}/release">
+                  <input type="hidden" name="csrf_token" value="{{ csrf }}">
+                  <input type="hidden" name="confirmation" value="release">
+                  <button class="danger" type="submit" onclick="return confirm('Release this host to the GENERAL pool?')">Release to general</button>
+                </form>
+                {% if projects|length > 1 %}
+                <form class="admin-form" method="post" action="/admin/hosts/{{ h.host_id }}/move">
+                  <input type="hidden" name="csrf_token" value="{{ csrf }}">
+                  <input type="hidden" name="confirmation" value="move">
+                  <label>Move to project<select name="target_project_id" required>
+                    {% for target in projects %}{% if target.id != p.id %}
+                      <option value="{{ target.id }}">{{ target.name }}</option>
+                    {% endif %}{% endfor %}
+                  </select></label>
+                  <button class="secondary" type="submit" onclick="return confirm('Transfer host to the selected project?')">Transfer</button>
+                </form>
+                {% endif %}
+              </td>
+            </tr>
+          {% else %}<tr><td colspan="3">No hosts yet</td></tr>{% endfor %}
+          </tbody>
+        </table></div>
+        {% if unassigned and p.groups %}
+        <form class="admin-form" method="post" action="/admin/projects/{{ p.id }}/hosts/add">
+          <input type="hidden" name="csrf_token" value="{{ csrf }}">
+          <label>Assign from general pool<select name="host_id" required>
+            {% for h in unassigned %}<option value="{{ h.hostid }}">{{ h.name }} ({{ h.hostid }})</option>{% endfor %}
+          </select></label>
+          <button type="submit" onclick="return confirm('Move this host OUT of the general pool into this project?')">Assign host</button>
+        </form>
+        {% endif %}
+      </div>
+      {% if not p.groups and not p.hosts %}
+      <div class="admin-project"><form method="post" action="/admin/projects/{{ p.id }}/delete">
+        <input type="hidden" name="csrf_token" value="{{ csrf }}">
+        <input type="hidden" name="confirmation" value="delete-empty">
+        <button class="danger" type="submit" onclick="return confirm('Delete this EMPTY project permanently?')">Delete empty project</button>
+      </form></div>
+      {% endif %}
+    </section>
+  {% else %}
+    <section class="card"><h2>No projects</h2><p>Create Project Alpha above to begin. All enabled Windows hosts remain in the general pool.</p></section>
+  {% endfor %}
+  </div>
+  <section class="card">
+    <h2>Project configuration audit · latest 30</h2>
+    <div class="table-scroll"><table>
+      <thead><tr><th>UTC</th><th>Administrator</th><th>Action</th><th>Details</th></tr></thead>
+      <tbody>{% for r in history %}
+        <tr><td>{{ r.created_utc[:19] }}</td><td>{{ r.actor }}</td><td>{{ r.operation }}</td><td>{{ r.details }}</td></tr>
+      {% else %}<tr><td colspan="4">No configuration changes</td></tr>{% endfor %}</tbody>
+    </table></div>
+  </section>
+</div>
+{% endblock %}
