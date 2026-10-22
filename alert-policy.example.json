@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "deployment_mode": "DRY_RUN",
+  "send_email": false,
+  "source": {
+    "system": "Zabbix 6.4 API",
+    "windows_direct_template_id": "10081",
+    "severity_codes": [4, 5],
+    "include_service_problems": true,
+    "include_host_unavailable": true,
+    "poll_interval_seconds": 60
+  },
+  "aggregation": {
+    "key": "zabbix_hostid",
+    "initial_wait_seconds": 120,
+    "update_wait_seconds": 120,
+    "repeat_unsolved_seconds": 14400,
+    "notify_partial_recovery": true,
+    "notify_full_recovery": true,
+    "baseline_existing_problems_without_email": true,
+    "queue_until_maintenance_ends": true,
+    "suppress_while_in_maintenance": true
+  },
+  "service_policy": {
+    "critical_service_names": [],
+    "global_excluded_service_names": [],
+    "per_host_exclusions": {}
+  },
+  "routing": {
+    "project_membership_source": "Maintenance Portal Project RBAC SQLite (read-only)",
+    "unassigned_hosts": "general_pool",
+    "project_without_recipient": "FAIL_CLOSED",
+    "general_recipients": [],
+    "project_recipients": {}
+  },
+  "smtp": {
+    "enabled": false,
+    "relay_host": null,
+    "relay_port": null,
+    "starttls": null,
+    "auth": false,
+    "from_address": null
+  }
+}
