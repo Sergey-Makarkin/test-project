@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% block page_header %}{% endblock %}
+{% block content %}
+<style>
+main:has(> .alert-layout){max-width:none}
+.alert-layout{display:grid;gap:16px}
+.alert-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(420px,100%),1fr));gap:16px}
+.alert-form{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:12px 0}
+.alert-form label{flex:1 1 180px;margin:0}
+.alert-form input,.alert-form select,.alert-form textarea{margin-top:5px}
+.alert-form button{margin:0}
+.alert-form textarea{width:100%;min-height:76px}
+.alert-muted{font-size:12px;color:#65748c}
+.alert-scroll{overflow-x:auto}
+.alert-status{border:1px solid #dce4f0;padding:12px;border-radius:8px}
+</style>
+<div class="alert-layout">
+  <section class="card">
+    <div class="alert-form">
+      <a class="button secondary" href="/admin">← Project administration</a>
+      <a class="button secondary" href="/">Maintenance Portal</a>
+      <h1 style="margin:0">Administration · Email Alerting</h1>
+    </div>
+    <p class="alert-status"><strong>CONFIGURATION ONLY / DRY RUN.</strong> SMTP is not connected. Saving rules does not change Zabbix triggers or LLD macros, and does not send email. Only Admin can change these settings.</p>
+    <p class="muted">Policy: High / Disaster · group by one Windows host · 120-second batching · 4-hour reminders · no historical event mailing.</p>
+  </section>
+  <div class="alert-grid">
+    <section class="card">
+      <h2>General pool recipients</h2>
+      <form method="post" action="/admin/alerting/recipients/general">
+        <input type="hidden" name="csrf_token" value="{{ csrf }}">
+        <label>Corporate mailboxes / distribution lists (comma or newline separated)
+          <textarea name="recipients" maxlength="6000" placeholder="operations@example.com">{{ general_recipients_text }}</textarea>
+        </label>
+        <div class="alert-form"><button type="submit">Save general recipients</button></div>
+      </form>
+      <p class="alert-muted">These recipients apply exclusively to hosts without a project assignment. Blank means not configured.</p>
+    </section>
+    <section class="card">
+      <h2>Project recipients</h2>
+      {% for p in projects %}
+      <h3>{{ p.name }} <span class="alert-muted">#{{ p.id }}</span></h3>
+      <form method="post" action="/admin/alerting/recipients/project/{{ p.id }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf }}">
+        <label>Email addresses / DL
+          <textarea name="recipients" maxlength="6000" placeholder="project-team@example.com">{{ p.recipients_text }}</textarea>
+        </label>
+        <div class="alert-form"><button type="submit">Save recipients for {{ p.name }}</button></div>
+      </form>
+      <p class="alert-muted">Missing project addresses never fall back to general recipients.</p>
+      {% else %}
+        <p>No projects configured.</p>
+      {% endfor %}
+    </section>
+  </div>
+  <section class="card">
+    <h2>Critical Windows services and exclusions</h2>
+    <p class="muted">Enter the exact service <strong>short name</strong>, for example <code>GxCVD(Instance001)</code> or <code>MSSQLSERVER</code>. Rules use priority: Global → Project → Host. More specific rules override more general rules. Exclude removes a service from the critical list.</p>
+    <form class="alert-form" method="post" action="/admin/alerting/rules">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <input type="hidden" name="scope" value="global">
+      <label>Global service name<input type="text" name="service_name" maxlength="128" required placeholder="MSSQLSERVER"></label>
+      <label>Rule<select name="mode"><option value="critical">Critical</option><option value="exclude">Exclude</option></select></label>
+      <label>Severity<select name="severity"><option value="4">High</option><option value="5">Disaster</option></select></label>
+      <button type="submit">Add / update global rule</button>
+    </form>
+    <hr>
+    <form class="alert-form" method="post" action="/admin/alerting/rules">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <input type="hidden" name="scope" value="project">
+      <label>Project<select name="project_id" required>
+        {% for p in projects %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}
+      </select></label>
+      <label>Service name<input type="text" name="service_name" maxlength="128" required placeholder="GxCVD(Instance001)"></label>
+      <label>Rule<select name="mode"><option value="critical">Critical</option><option value="exclude">Exclude</option></select></label>
+      <label>Severity<select name="severity"><option value="4">High</option><option value="5">Disaster</option></select></label>
+      <button type="submit" {% if not projects %}disabled{% endif %}>Add / update project rule</button>
+    </form>
+    <hr>
+    <form class="alert-form" method="post" action="/admin/alerting/rules">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <input type="hidden" name="scope" value="host">
+      <label>Windows host<select name="host_id" required>
+        {% for h in hosts %}<option value="{{ h.hostid }}">{{ h.name }} · {{ h.hostid }}</option>{% endfor %}
+      </select></label>
+      <label>Service name<input type="text" name="service_name" maxlength="128" required placeholder="winlogbeat"></label>
+      <label>Rule<select name="mode"><option value="critical">Critical</option><option value="exclude">Exclude</option></select></label>
+      <label>Severity<select name="severity"><option value="4">High</option><option value="5">Disaster</option></select></label>
+      <button type="submit" {% if not hosts %}disabled{% endif %}>Add / update host rule</button>
+    </form>
+  </section>
+  <section class="card">
+    <h2>Configured rules ({{ rules|length }})</h2>
+    <div class="alert-scroll"><table>
+      <thead><tr><th>Scope</th><th>Windows service</th><th>Action</th><th>Severity</th><th></th></tr></thead>
+      <tbody>
+      {% for r in rules %}
+        <tr>
+          <td>{{ 'Global' if r.scope == 'global' else r.project_name if r.scope == 'project' else 'Host ' ~ r.host_id }}</td>
+          <td><code>{{ r.service_name }}</code></td><td>{{ r.mode }}</td><td>{{ 'High' if r.severity == 4 else 'Disaster' }}</td>
+          <td><form method="post" action="/admin/alerting/rules/{{ r.id }}/delete">
+            <input type="hidden" name="csrf_token" value="{{ csrf }}">
+            <button class="danger" type="submit" onclick="return confirm('Delete this alert rule?')">Delete</button>
+          </form></td>
+        </tr>
+      {% else %}<tr><td colspan="5">No rules defined. No services selected for alerting.</td></tr>{% endfor %}
+      </tbody>
+    </table></div>
+  </section>
+  <section class="card">
+    <h2>Read-only routing and LLD preview</h2>
+    <form class="alert-form" method="get" action="/admin/alerting">
+      <label>Select Windows host<select name="host_id" required>
+        {% for h in hosts %}<option value="{{ h.hostid }}" {% if preview and preview.host_id == h.hostid %}selected{% endif %}>{{ h.name }} · {{ h.hostid }}</option>{% endfor %}
+      </select></label>
+      <button type="submit" {% if not hosts %}disabled{% endif %}>Preview effective rules</button>
+    </form>
+    {% if preview %}
+      <p><strong>{{ preview.host_name }} ({{ preview.host_id }})</strong> · {{ preview.project_name or 'General pool' }}</p>
+      <p><strong>Recipients:</strong> {% if preview.route_configured %}{{ preview.recipients|join(', ') }}{% else %}<strong>NOT CONFIGURED (fail closed)</strong>{% endif %}</p>
+      <p><strong>Critical services:</strong> {{ preview.critical_services|length }}</p>
+      <ul>{% for s in preview.critical_services %}<li><code>{{ s.name }}</code> · {{ 'High' if s.severity == 4 else 'Disaster' }}</li>{% else %}<li>None</li>{% endfor %}</ul>
+      <label>Generated regex (preview only)<textarea readonly>{{ preview.regex }}</textarea></label>
+    {% endif %}
+  </section>
+  <section class="card">
+    <h2>Alert configuration audit · latest 20</h2>
+    <div class="alert-scroll"><table>
+      <thead><tr><th>UTC</th><th>Admin</th><th>Operation</th><th>Details</th></tr></thead>
+      <tbody>{% for r in history %}
+        <tr><td>{{ r.created_utc }}</td><td>{{ r.actor }}</td><td>{{ r.operation }}</td><td>{{ r.details }}</td></tr>
+      {% else %}<tr><td colspan="4">No changes</td></tr>{% endfor %}
+      </tbody>
+    </table></div>
+  </section>
+</div>
+{% endblock %}
