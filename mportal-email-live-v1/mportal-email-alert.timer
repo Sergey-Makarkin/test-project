@@ -1,0 +1,11 @@
+[Unit]
+Description=Run MPortal LIVE email aggregation once per minute
+
+[Timer]
+OnCalendar=*-*-* *:*:00
+AccuracySec=3s
+Persistent=true
+Unit=mportal-email-alert.service
+
+[Install]
+WantedBy=timers.target

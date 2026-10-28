@@ -1,0 +1,30 @@
+[Unit]
+Description=MPortal Zabbix Email Alerting (LIVE)
+After=network-online.target maintenance-portal.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=maintenance-portal
+Group=maintenance-portal
+WorkingDirectory=/opt/maintenance-portal-demo
+EnvironmentFile=/etc/maintenance-portal/portal.env
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/opt/maintenance-portal-demo/.venv/bin/python /opt/maintenance-portal-demo/mportal_mail_live.py --live
+StateDirectory=mportal-live
+StateDirectoryMode=0700
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ProtectKernelTunables=true
+ProtectControlGroups=true
+ProtectKernelModules=true
+LockPersonality=true
+RestrictSUIDSGID=true
+ReadWritePaths=/var/lib/mportal-live
+TimeoutStartSec=180
+
+[Install]
+WantedBy=multi-user.target
