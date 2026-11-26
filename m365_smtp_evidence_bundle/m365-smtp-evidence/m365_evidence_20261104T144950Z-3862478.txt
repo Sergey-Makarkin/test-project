@@ -1,0 +1,37 @@
+MICROSOFT 365 SMTP OUTBOUND TRANSPORT EVIDENCE
+===========================================
+Type: Direct Python -> Microsoft 365 MX (NOT a Postfix/gateway queue record)
+Case ID: 20261104T144950Z-3862478
+Sender (MAIL FROM): mportal@gepzafiro.com
+Recipient (RCPT TO): sergey.makarkin@petrofac.com
+Subject: [MPortal][M365 SUPPORT CASE] Direct Send check 20261104T144950Z-3862478
+Message-ID: <179380379054.3862478.18260117107725568691.m365-evidence-20261104T144950Z-3862478@ml2zbx01>
+Start time (local with offset): 2026-11-04T15:49:50.547+01:00
+Start time (UTC): 2026-11-04T14:49:50.547+00:00
+End time (local with offset): 2026-11-04T15:50:11.255+01:00
+End time (UTC): 2026-11-04T14:50:11.255+00:00
+Destination hostname: gepzafiro-com.mail.protection.outlook.com
+Remote destination IP: 52.101.160.1
+Destination port: 25
+Local source IP: 10.198.149.88
+Local source port: 41380
+Public source IP: UNKNOWN (verify public NAT address)
+Public IP evidence: not established: no Microsoft EHLO reply
+TLS established: no
+Authentication: none
+Last SMTP response received: 220 JN3PEPF00000312.mail.protection.outlook.com Microsoft ESMTP MAIL Service ready at Wed, 4 Nov 2026 14:49:51 +0000 [08DF369D1CB686F4]
+Failed at stage: EHLO
+Response at failed stage: NO REPLY (transport error)
+Final SMTP submission status: FAILED_BEFORE_DATA_NO_MESSAGE_SUBMITTED
+Local queue status: NOT APPLICABLE: no Postfix or persistent local mail queue used
+Final mailbox delivery status: NOT SUBMITTED in this SMTP transaction
+Error: SMTPServerDisconnected: Connection unexpectedly closed: timed out
+
+SMTP SESSION TRANSCRIPT (times include local offset and UTC):
+[2026-11-04T15:49:51.234+01:00 / 2026-11-04T14:49:51.234+00:00] 220 BANNER: 220 JN3PEPF00000312.mail.protection.outlook.com Microsoft ESMTP MAIL Service ready at Wed, 4 Nov 2026 14:49:51 +0000 [08DF369D1CB686F4]
+[2026-11-04T15:50:11.254+01:00 / 2026-11-04T14:50:11.254+00:00] ERROR at EHLO | SMTPServerDisconnected: Connection unexpectedly closed: timed out
+
+IMPORTANT:
+For a genuine gateway outbound relay/queue record, obtain the relay's own logs.
+A failed EHLO before MAIL FROM means NO MESSAGE was submitted or queued by this script.
+A 250 response after DATA confirms SMTP acceptance, NOT mailbox delivery.

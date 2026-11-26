@@ -1,0 +1,53 @@
+{
+  "record_type": "direct_python_smtp_transport_not_gateway_queue",
+  "case_id": "20261104T144950Z-3862478",
+  "started": {
+    "local": "2026-11-04T15:49:50.547+01:00",
+    "utc": "2026-11-04T14:49:50.547+00:00"
+  },
+  "sender": "mportal@gepzafiro.com",
+  "recipient": "sergey.makarkin@petrofac.com",
+  "subject": "[MPortal][M365 SUPPORT CASE] Direct Send check 20261104T144950Z-3862478",
+  "message_id": "<179380379054.3862478.18260117107725568691.m365-evidence-20261104T144950Z-3862478@ml2zbx01>",
+  "ehlo_hostname": "ml2zbx01.biokob.com",
+  "remote_host": "gepzafiro-com.mail.protection.outlook.com",
+  "remote_port": 25,
+  "public_source_ip_supplied": null,
+  "public_source_ip_observed_by_m365": null,
+  "local_source_ip": "10.198.149.88",
+  "local_source_port": 41380,
+  "remote_ip": "52.101.160.1",
+  "tls_established": false,
+  "authentication": "none",
+  "local_queue_status": "N/A: direct client, no local queue",
+  "smtp_transcript": [
+    {
+      "stage": "220 BANNER",
+      "local": "2026-11-04T15:49:51.234+01:00",
+      "utc": "2026-11-04T14:49:51.234+00:00",
+      "smtp_code": 220,
+      "smtp_response": "JN3PEPF00000312.mail.protection.outlook.com Microsoft ESMTP MAIL Service ready at Wed, 4 Nov 2026 14:49:51 +0000 [08DF369D1CB686F4]"
+    },
+    {
+      "stage": "ERROR at EHLO",
+      "local": "2026-11-04T15:50:11.254+01:00",
+      "utc": "2026-11-04T14:50:11.254+00:00",
+      "detail": "SMTPServerDisconnected: Connection unexpectedly closed: timed out"
+    }
+  ],
+  "last_smtp_response": "220 JN3PEPF00000312.mail.protection.outlook.com Microsoft ESMTP MAIL Service ready at Wed, 4 Nov 2026 14:49:51 +0000 [08DF369D1CB686F4]",
+  "final_smtp_submission_status": "FAILED_BEFORE_DATA_NO_MESSAGE_SUBMITTED",
+  "error": "SMTPServerDisconnected: Connection unexpectedly closed: timed out",
+  "failed_stage": "EHLO",
+  "failed_stage_code": null,
+  "resolved_ip_addresses": [
+    "52.101.160.0",
+    "52.101.160.1",
+    "52.101.162.0",
+    "52.101.162.1"
+  ],
+  "finished": {
+    "local": "2026-11-04T15:50:11.255+01:00",
+    "utc": "2026-11-04T14:50:11.255+00:00"
+  }
+}
